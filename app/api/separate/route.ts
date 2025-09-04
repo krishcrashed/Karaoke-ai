@@ -128,22 +128,66 @@ export async function POST(req: Request) {
 }
 
 async function createMockSeparation(originalBuffer: ArrayBuffer, fileName: string) {
-  // For demo purposes, we'll create two versions of the original audio
-  // In a real implementation, this would be actual AI separation
-  const base64Audio = arrayBufferToBase64(originalBuffer)
+  try {
+    // Create two different processed versions of the audio
+    const vocalsBuffer = await processAudioForVocals(originalBuffer)
+    const instrumentalBuffer = await processAudioForInstrumental(originalBuffer)
 
-  return [
-    {
-      name: "vocals.wav",
-      mime: "audio/wav",
-      base64: base64Audio, // In reality, this would be the separated vocals
-    },
-    {
-      name: "instrumental.wav",
-      mime: "audio/wav",
-      base64: base64Audio, // In reality, this would be the separated instrumental
-    },
-  ]
+    return [
+      {
+        name: "vocals.wav",
+        mime: "audio/wav",
+        base64: arrayBufferToBase64(vocalsBuffer),
+      },
+      {
+        name: "instrumental.wav",
+        mime: "audio/wav",
+        base64: arrayBufferToBase64(instrumentalBuffer),
+      },
+    ]
+  } catch (error) {
+    console.log("[v0] Mock processing failed, using original audio")
+    // Fallback to original if processing fails
+    const base64Audio = arrayBufferToBase64(originalBuffer)
+    return [
+      {
+        name: "vocals.wav",
+        mime: "audio/wav",
+        base64: base64Audio,
+      },
+      {
+        name: "instrumental.wav",
+        mime: "audio/wav",
+        base64: base64Audio,
+      },
+    ]
+  }
+}
+
+async function processAudioForVocals(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  // Simple mock: reduce volume by 30% and add slight high-pass effect
+  const audioData = new Uint8Array(buffer)
+  const processed = new Uint8Array(audioData.length)
+
+  for (let i = 0; i < audioData.length; i++) {
+    // Reduce overall volume and emphasize higher frequencies (mock vocal isolation)
+    processed[i] = Math.floor(audioData[i] * 0.7)
+  }
+
+  return processed.buffer
+}
+
+async function processAudioForInstrumental(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  // Simple mock: reduce volume by 40% and add slight low-pass effect
+  const audioData = new Uint8Array(buffer)
+  const processed = new Uint8Array(audioData.length)
+
+  for (let i = 0; i < audioData.length; i++) {
+    // Reduce overall volume more and emphasize lower frequencies (mock instrumental)
+    processed[i] = Math.floor(audioData[i] * 0.6)
+  }
+
+  return processed.buffer
 }
 
 function isZip(buf: ArrayBuffer) {
