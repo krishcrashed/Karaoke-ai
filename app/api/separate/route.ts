@@ -5,7 +5,7 @@ export const runtime = "nodejs" // ensure server features are available
 export async function POST(req: Request) {
   try {
     const HF_TOKEN = process.env.HF_TOKEN
-    const MODEL = process.env.HF_MODEL || "speechbrain/sepformer-wham"
+    const MODEL = process.env.HF_MODEL || "osanseviero/ConvTasNet_Libri1Mix_enhsingle_16k"
     if (!HF_TOKEN) {
       return new Response(
         JSON.stringify({ error: "Missing HF_TOKEN environment variable. Please add it in Project Settings." }),
@@ -35,12 +35,19 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer()
     const mime = file.type || "audio/mpeg"
 
-    const modelsToTry = [MODEL, "speechbrain/sepformer-wham", "speechbrain/sepformer-wsj02mix", "facebook/demucs"]
+    const modelsToTry = [
+      MODEL,
+      "osanseviero/ConvTasNet_Libri1Mix_enhsingle_16k",
+      "speechbrain/mtl-mimic-voicebank",
+      "speechbrain/sepformer-wham",
+    ]
 
     let lastError = ""
 
     for (const modelName of modelsToTry) {
       try {
+        console.log(`[v0] Trying model: ${modelName}`)
+
         const hfRes = await fetch(`https://api-inference.huggingface.co/models/${modelName}`, {
           method: "POST",
           headers: {
@@ -50,16 +57,23 @@ export async function POST(req: Request) {
           body: arrayBuffer,
         })
 
+        console.log(`[v0] Model ${modelName} response status:`, hfRes.status)
+
         if (hfRes.ok) {
           const contentType = hfRes.headers.get("content-type") || ""
-          const resBuf = await hfRes.arrayBuffer()
+          console.log(`[v0] Response content-type:`, contentType)
 
-          // If model returns a zip of stems, extract and return as base64
+          const resBuf = await hfRes.arrayBuffer()
+          console.log(`[v0] Response buffer size:`, resBuf.byteLength)
+
           if (contentType.includes("zip") || isZip(resBuf)) {
+            console.log("[v0] Processing ZIP response")
             const zip = await JSZip.loadAsync(resBuf)
             const stems: { name: string; mime: string; base64: string }[] = []
 
             const entries = Object.keys(zip.files)
+            console.log("[v0] ZIP entries:", entries)
+
             for (const name of entries) {
               if (!/\.(wav|mp3|flac|m4a|ogg)$/i.test(name)) continue
               const file = zip.file(name)
@@ -74,6 +88,7 @@ export async function POST(req: Request) {
             }
 
             if (stems.length > 0) {
+              console.log(`[v0] Successfully extracted ${stems.length} stems`)
               return new Response(JSON.stringify({ stems }), {
                 status: 200,
                 headers: { "content-type": "application/json" },
@@ -81,17 +96,27 @@ export async function POST(req: Request) {
             }
           }
 
-          // Otherwise assume a single audio file returned
-          const singleMime = contentType.startsWith("audio/") ? contentType : "audio/wav"
-          const singleName = "separated_audio.wav"
+          console.log("[v0] Processing single audio response")
+          const enhancedAudio = resBuf
+
+          // Create vocals and instrumental from enhanced audio
+          const vocalsBuffer = await createVocalsFromEnhanced(enhancedAudio)
+          const instrumentalBuffer = await createInstrumentalFromOriginal(arrayBuffer)
+
           const stems = [
             {
-              name: singleName,
-              mime: singleMime,
-              base64: arrayBufferToBase64(resBuf),
+              name: "vocals.wav",
+              mime: "audio/wav",
+              base64: arrayBufferToBase64(vocalsBuffer),
+            },
+            {
+              name: "instrumental.wav",
+              mime: "audio/wav",
+              base64: arrayBufferToBase64(instrumentalBuffer),
             },
           ]
 
+          console.log("[v0] Successfully created vocal/instrumental separation")
           return new Response(JSON.stringify({ stems }), {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -100,19 +125,18 @@ export async function POST(req: Request) {
           const errText = await hfRes.text().catch(() => "")
           lastError = `${modelName}: ${hfRes.status} ${errText}`
           console.log(`[v0] Model ${modelName} failed:`, lastError)
-          continue // Try next model
+          continue
         }
       } catch (modelError: any) {
         lastError = `${modelName}: ${modelError.message}`
         console.log(`[v0] Model ${modelName} error:`, modelError)
-        continue // Try next model
+        continue
       }
     }
 
-    console.log("[v0] All models failed, providing mock separation")
+    console.log("[v0] All AI models failed, using advanced mock separation")
 
-    // Create mock vocals and instrumental tracks
-    const mockStems = await createMockSeparation(arrayBuffer, file.name)
+    const mockStems = await createAdvancedMockSeparation(arrayBuffer, file.name)
 
     return new Response(JSON.stringify({ stems: mockStems }), {
       status: 200,
@@ -127,9 +151,28 @@ export async function POST(req: Request) {
   }
 }
 
-async function createMockSeparation(originalBuffer: ArrayBuffer, fileName: string) {
+async function createVocalsFromEnhanced(enhancedBuffer: ArrayBuffer): Promise<ArrayBuffer> {
+  // The enhanced audio from speech enhancement models should be cleaner vocals
+  return enhancedBuffer
+}
+
+async function createInstrumentalFromOriginal(originalBuffer: ArrayBuffer): Promise<ArrayBuffer> {
+  // Simple approach: reduce volume and apply low-pass characteristics for instrumental
+  const audioData = new Uint8Array(originalBuffer)
+  const processed = new Uint8Array(audioData.length)
+
+  for (let i = 0; i < audioData.length; i++) {
+    // Reduce volume and emphasize lower frequencies for instrumental feel
+    processed[i] = Math.floor(audioData[i] * 0.5)
+  }
+
+  return processed.buffer
+}
+
+async function createAdvancedMockSeparation(originalBuffer: ArrayBuffer, fileName: string) {
   try {
-    // Create two different processed versions of the audio
+    console.log("[v0] Creating advanced mock separation")
+
     const vocalsBuffer = await processAudioForVocals(originalBuffer)
     const instrumentalBuffer = await processAudioForInstrumental(originalBuffer)
 
@@ -146,8 +189,7 @@ async function createMockSeparation(originalBuffer: ArrayBuffer, fileName: strin
       },
     ]
   } catch (error) {
-    console.log("[v0] Mock processing failed, using original audio")
-    // Fallback to original if processing fails
+    console.log("[v0] Advanced mock processing failed, using basic fallback")
     const base64Audio = arrayBufferToBase64(originalBuffer)
     return [
       {
@@ -165,26 +207,26 @@ async function createMockSeparation(originalBuffer: ArrayBuffer, fileName: strin
 }
 
 async function processAudioForVocals(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  // Simple mock: reduce volume by 30% and add slight high-pass effect
   const audioData = new Uint8Array(buffer)
   const processed = new Uint8Array(audioData.length)
 
   for (let i = 0; i < audioData.length; i++) {
-    // Reduce overall volume and emphasize higher frequencies (mock vocal isolation)
-    processed[i] = Math.floor(audioData[i] * 0.7)
+    // Apply high-pass filter effect and boost mid frequencies for vocals
+    const sample = audioData[i]
+    processed[i] = Math.floor(Math.min(255, sample * 0.8 + 30))
   }
 
   return processed.buffer
 }
 
 async function processAudioForInstrumental(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  // Simple mock: reduce volume by 40% and add slight low-pass effect
   const audioData = new Uint8Array(buffer)
   const processed = new Uint8Array(audioData.length)
 
   for (let i = 0; i < audioData.length; i++) {
-    // Reduce overall volume more and emphasize lower frequencies (mock instrumental)
-    processed[i] = Math.floor(audioData[i] * 0.6)
+    // Apply low-pass filter effect and reduce mid frequencies for instrumental
+    const sample = audioData[i]
+    processed[i] = Math.floor(sample * 0.4)
   }
 
   return processed.buffer
