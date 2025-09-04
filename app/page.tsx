@@ -146,7 +146,7 @@ export default function HomePage() {
                     type="file"
                     accept="audio/*"
                     onChange={onFileChange}
-                    className="block flex-shrink-0 rounded-md border border-white/10 bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none"
+                    className="block flex-shrink-0 border border-white/10 bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg"
                   />
 
                   {file && (
