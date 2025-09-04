@@ -140,13 +140,13 @@ export default function HomePage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-row">
                   <input
                     aria-label="Upload audio file"
                     type="file"
                     accept="audio/*"
                     onChange={onFileChange}
-                    className="block flex-shrink-0 border border-white/10 bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg"
+                    className="block flex-shrink-0 border bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg gap-0 border-slate-600 leading-5 flex-row justify-center items-stretch"
                   />
 
                   {file && (
@@ -205,35 +205,21 @@ export default function HomePage() {
 
         {(vocalsUrl || instrumentalUrl) && (
           <section className="mt-10 grid gap-6">
-            <Card className="bg-black/40 backdrop-blur border-white/10">
-              <CardHeader>
-                <CardTitle className="text-lg md:text-xl">Results</CardTitle>
-              </CardHeader>
+            <Card className="bg-black/40 backdrop-blur border-slate-500">
+              
               <CardContent className="grid gap-6">
                 {vocalsUrl && (
                   <div>
                     <h3 className="font-medium mb-2 text-[#ec4899]">Vocals</h3>
                     <audio controls src={vocalsUrl} className="w-full" />
-                    <a
-                      href={vocalsUrl}
-                      download={downloadNames.vocals}
-                      className="mt-2 inline-block text-sm underline decoration-[#8b5cf6] underline-offset-4 hover:text-[#8b5cf6]"
-                    >
-                      Download vocals
-                    </a>
+                    
                   </div>
                 )}
                 {instrumentalUrl && (
                   <div>
                     <h3 className="font-medium mb-2 text-[#8b5cf6]">Instrumental</h3>
                     <audio controls src={instrumentalUrl} className="w-full" />
-                    <a
-                      href={instrumentalUrl}
-                      download={downloadNames.instrumental}
-                      className="mt-2 inline-block text-sm underline decoration-[#ec4899] underline-offset-4 hover:text-[#ec4899]"
-                    >
-                      Download instrumental
-                    </a>
+                    
                   </div>
                 )}
               </CardContent>
@@ -242,7 +228,7 @@ export default function HomePage() {
         )}
 
         <footer className="mt-12 text-center text-xs text-white/60">
-          Note: Large files may take longer. Ensure you’ve set the HF_TOKEN in Project Settings.
+          {"Note: Large files may take longer.                                              \n                                                \n\n\n\nA project by Krish Agarwal"} 
         </footer>
       </div>
     </main>
