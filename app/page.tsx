@@ -71,6 +71,8 @@ export default function HomePage() {
       setError("Please choose an audio file first.")
       return
     }
+
+    console.log("[v0] Starting separation for file:", file.name, "size:", file.size)
     setIsProcessing(true)
     setCurrentStep(0)
     setError(null)
@@ -88,24 +90,34 @@ export default function HomePage() {
       const form = new FormData()
       form.set("file", file)
 
+      console.log("[v0] Sending request to /api/separate")
       const res = await fetch("/api/separate", {
         method: "POST",
         body: form,
       })
 
+      console.log("[v0] Response status:", res.status)
       if (!res.ok) {
         const txt = await res.text()
+        console.log("[v0] Error response:", txt)
         throw new Error(txt || "Separation failed")
       }
 
       const data = (await res.json()) as SeparateResponse
+      console.log("[v0] Response data:", data)
+
       if ("error" in data) throw new Error(data.error)
 
       // Find vocals and accompaniment if provided; otherwise assemble accompaniment from non-vocals
       const { vocalsBlob, instrumentalBlob, vocalsName, instrumentalName } = await prepareOutputs(data.stems)
 
+      console.log("[v0] Created blobs - vocals:", vocalsBlob.size, "instrumental:", instrumentalBlob.size)
+
       const vocalsUrlObj = URL.createObjectURL(vocalsBlob)
       const instrumentalUrlObj = URL.createObjectURL(instrumentalBlob)
+
+      console.log("[v0] Created URLs:", vocalsUrlObj, instrumentalUrlObj)
+
       setVocalsUrl(vocalsUrlObj)
       setInstrumentalUrl(instrumentalUrlObj)
       setDownloadNames({
@@ -113,7 +125,7 @@ export default function HomePage() {
         instrumental: instrumentalName,
       })
     } catch (err: any) {
-      console.error(err)
+      console.error("[v0] Separation error:", err)
       setError(err?.message || "Something went wrong.")
     } finally {
       clearInterval(stepTimer)
@@ -135,7 +147,7 @@ export default function HomePage() {
 
         <Card className="bg-black/40 backdrop-blur border-white/10">
           <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Upload audio</CardTitle>
+            <CardTitle className="text-lg md:text-xl text-white">Upload audio</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -161,7 +173,7 @@ export default function HomePage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
                         />
                       </svg>
                       <span className="text-sm text-white/90 truncate">{file.name}</span>
@@ -206,20 +218,17 @@ export default function HomePage() {
         {(vocalsUrl || instrumentalUrl) && (
           <section className="mt-10 grid gap-6">
             <Card className="bg-black/40 backdrop-blur border-slate-500">
-              
               <CardContent className="grid gap-6">
                 {vocalsUrl && (
                   <div>
                     <h3 className="font-medium mb-2 text-[#ec4899]">Vocals</h3>
                     <audio controls src={vocalsUrl} className="w-full" />
-                    
                   </div>
                 )}
                 {instrumentalUrl && (
                   <div>
                     <h3 className="font-medium mb-2 text-[#8b5cf6]">Instrumental</h3>
                     <audio controls src={instrumentalUrl} className="w-full" />
-                    
                   </div>
                 )}
               </CardContent>
@@ -228,7 +237,9 @@ export default function HomePage() {
         )}
 
         <footer className="mt-12 text-center text-xs text-white/60">
-          {"Note: Large files may take longer.                                              \n                                                \n\n\n\nA project by Krish Agarwal"} 
+          {
+            "Note: Large files may take longer.                                              \n                                                \n\n\n\nA project by Krish Agarwal"
+          }
         </footer>
       </div>
     </main>
