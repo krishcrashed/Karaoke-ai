@@ -152,45 +152,47 @@ export default function HomePage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="space-y-3">
-                <div className="flex items-center gap-2 flex-row">
+                <div className="flex items-center gap-3 w-full">
                   <input
                     aria-label="Upload audio file"
                     type="file"
                     accept="audio/*"
                     onChange={onFileChange}
-                    className="block flex-shrink-0 border bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg gap-0 border-slate-600 leading-5 flex-row justify-center items-stretch"
+                    className="block w-auto min-w-0 border bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg border-slate-600 leading-5"
                   />
 
                   {file && (
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <svg
-                        className="h-4 w-4 text-[#8b5cf6] flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                        />
-                      </svg>
-                      <span className="text-sm text-white/90 truncate">{file.name}</span>
-                      <span className="text-xs text-white/60 flex-shrink-0">
-                        ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                      </span>
+                    <>
+                      <div className="flex items-center gap-2 flex-1 min-w-0 bg-black/30 rounded-lg px-3 py-2 border border-slate-600">
+                        <svg
+                          className="h-4 w-4 text-[#8b5cf6] flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                          />
+                        </svg>
+                        <span className="text-sm text-white/90 truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-white/60 flex-shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={removeFile}
-                        className="ml-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors flex-shrink-0"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors flex-shrink-0"
                         aria-label="Remove file"
                       >
-                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                    </div>
+                    </>
                   )}
                 </div>
               </div>

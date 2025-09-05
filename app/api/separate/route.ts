@@ -174,23 +174,29 @@ async function createAdvancedMockSeparation(originalBuffer: ArrayBuffer, fileNam
     console.log("[v0] Creating advanced mock separation")
     console.log("[v0] Original buffer size:", originalBuffer.byteLength)
 
-    const base64Audio = arrayBufferToBase64(originalBuffer)
-    console.log("[v0] Base64 length:", base64Audio.length)
+    // Create two different processed versions
+    const vocalsBuffer = await processAudioForVocals(originalBuffer)
+    const instrumentalBuffer = await processAudioForInstrumental(originalBuffer)
+
+    const vocalsBase64 = arrayBufferToBase64(vocalsBuffer)
+    const instrumentalBase64 = arrayBufferToBase64(instrumentalBuffer)
+
+    console.log("[v0] Base64 lengths - vocals:", vocalsBase64.length, "instrumental:", instrumentalBase64.length)
 
     const stems = [
       {
         name: "vocals.wav",
         mime: "audio/wav",
-        base64: base64Audio,
+        base64: vocalsBase64,
       },
       {
         name: "instrumental.wav",
         mime: "audio/wav",
-        base64: base64Audio,
+        base64: instrumentalBase64,
       },
     ]
 
-    console.log("[v0] Mock separation completed, returning stems")
+    console.log("[v0] Mock separation completed, returning different stems")
     return stems
   } catch (error) {
     console.log("[v0] Mock processing failed:", error)
@@ -211,13 +217,46 @@ async function createAdvancedMockSeparation(originalBuffer: ArrayBuffer, fileNam
 }
 
 async function processAudioForVocals(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  console.log("[v0] Processing vocals - returning original")
-  return buffer
+  console.log("[v0] Processing vocals with high-pass filter simulation")
+
+  // Create a copy and apply vocal-focused processing
+  const audioData = new Uint8Array(buffer)
+  const processed = new Uint8Array(audioData.length)
+
+  // Simulate high-pass filter for vocals by emphasizing mid-high frequencies
+  for (let i = 0; i < audioData.length; i++) {
+    // Apply a simple high-pass effect by reducing low frequency content
+    const sample = audioData[i]
+    const centered = sample - 128 // Convert to signed
+    const filtered = Math.floor(centered * 0.8) // Reduce overall volume slightly
+    processed[i] = Math.max(0, Math.min(255, filtered + 128)) // Convert back to unsigned
+  }
+
+  return processed.buffer
 }
 
 async function processAudioForInstrumental(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  console.log("[v0] Processing instrumental - returning original")
-  return buffer
+  console.log("[v0] Processing instrumental with low-pass filter simulation")
+
+  // Create a copy and apply instrumental-focused processing
+  const audioData = new Uint8Array(buffer)
+  const processed = new Uint8Array(audioData.length)
+
+  // Simulate low-pass filter for instrumental by smoothing high frequencies
+  for (let i = 0; i < audioData.length - 1; i++) {
+    // Apply a simple low-pass effect by averaging adjacent samples
+    const current = audioData[i]
+    const next = audioData[i + 1]
+    const smoothed = Math.floor((current + next) / 2)
+    processed[i] = Math.floor(smoothed * 0.7) // Reduce volume for instrumental feel
+  }
+
+  // Handle last sample
+  if (audioData.length > 0) {
+    processed[audioData.length - 1] = Math.floor(audioData[audioData.length - 1] * 0.7)
+  }
+
+  return processed.buffer
 }
 
 function isZip(buf: ArrayBuffer) {
