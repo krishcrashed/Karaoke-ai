@@ -158,12 +158,12 @@ export default function HomePage() {
                     type="file"
                     accept="audio/*"
                     onChange={onFileChange}
-                    className="block w-auto min-w-0 border bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg border-slate-600 leading-5"
+                    className="block w-32 min-w-0 border bg-black/50 px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-[#8b5cf6] file:px-3 file:py-2 file:text-white hover:file:bg-[#7c3aed] focus:outline-none rounded-lg border-slate-600 leading-5"
                   />
 
                   {file && (
                     <>
-                      <div className="flex items-center gap-2 flex-1 min-w-0 bg-black/30 rounded-lg px-3 py-2 border border-slate-600">
+                      <div className="flex items-center gap-2 flex-[2] min-w-0 bg-black/30 rounded-lg px-3 py-2 border border-slate-600">
                         <svg
                           className="h-4 w-4 text-[#8b5cf6] flex-shrink-0"
                           fill="none"
