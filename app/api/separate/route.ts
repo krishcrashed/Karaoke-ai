@@ -217,43 +217,48 @@ async function createAdvancedMockSeparation(originalBuffer: ArrayBuffer, fileNam
 }
 
 async function processAudioForVocals(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  console.log("[v0] Processing vocals with high-pass filter simulation")
+  console.log("[v0] Processing vocals with volume boost")
 
-  // Create a copy and apply vocal-focused processing
   const audioData = new Uint8Array(buffer)
   const processed = new Uint8Array(audioData.length)
 
-  // Simulate high-pass filter for vocals by emphasizing mid-high frequencies
-  for (let i = 0; i < audioData.length; i++) {
-    // Apply a simple high-pass effect by reducing low frequency content
+  // Copy the entire file but adjust audio samples (skip headers by starting later)
+  const headerSize = Math.min(1000, audioData.length * 0.1) // Preserve likely header area
+
+  // Copy header unchanged
+  for (let i = 0; i < headerSize; i++) {
+    processed[i] = audioData[i]
+  }
+
+  // Process audio data with vocal emphasis (slight volume boost)
+  for (let i = headerSize; i < audioData.length; i++) {
     const sample = audioData[i]
-    const centered = sample - 128 // Convert to signed
-    const filtered = Math.floor(centered * 0.8) // Reduce overall volume slightly
-    processed[i] = Math.max(0, Math.min(255, filtered + 128)) // Convert back to unsigned
+    // Boost volume slightly for vocals (1.1x)
+    processed[i] = Math.min(255, Math.floor(sample * 1.1))
   }
 
   return processed.buffer
 }
 
 async function processAudioForInstrumental(buffer: ArrayBuffer): Promise<ArrayBuffer> {
-  console.log("[v0] Processing instrumental with low-pass filter simulation")
+  console.log("[v0] Processing instrumental with volume reduction")
 
-  // Create a copy and apply instrumental-focused processing
   const audioData = new Uint8Array(buffer)
   const processed = new Uint8Array(audioData.length)
 
-  // Simulate low-pass filter for instrumental by smoothing high frequencies
-  for (let i = 0; i < audioData.length - 1; i++) {
-    // Apply a simple low-pass effect by averaging adjacent samples
-    const current = audioData[i]
-    const next = audioData[i + 1]
-    const smoothed = Math.floor((current + next) / 2)
-    processed[i] = Math.floor(smoothed * 0.7) // Reduce volume for instrumental feel
+  // Copy the entire file but adjust audio samples (skip headers by starting later)
+  const headerSize = Math.min(1000, audioData.length * 0.1) // Preserve likely header area
+
+  // Copy header unchanged
+  for (let i = 0; i < headerSize; i++) {
+    processed[i] = audioData[i]
   }
 
-  // Handle last sample
-  if (audioData.length > 0) {
-    processed[audioData.length - 1] = Math.floor(audioData[audioData.length - 1] * 0.7)
+  // Process audio data with instrumental characteristics (volume reduction)
+  for (let i = headerSize; i < audioData.length; i++) {
+    const sample = audioData[i]
+    // Reduce volume for instrumental feel (0.8x)
+    processed[i] = Math.floor(sample * 0.8)
   }
 
   return processed.buffer
